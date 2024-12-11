@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>UG Марва</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.min.css">
+    <style>
+        :root {
+            --primary-color: #007AFF;
+            --secondary-color: #5856D6;
+            --background-light: #ffffff;
+            --text-light: #000000;
+            --background-dark: #000000;
+            --text-dark: #ffffff;
+            --primary-color-rgb: 0, 122, 255;
+        }
+
+        [data-theme="light"] {
+            --background: var(--background-light);
+            --text: var(--text-light);
+        }
+
+        [data-theme="dark"] {
+            --background: var(--background-dark);
+            --text: var(--text-dark);
+        }
+
+        body {
+            background-color: var(--background);
+            color: var(--text);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            transition: all 0.3s ease;
+        }
+
+        .nav-bottom {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            background: var(--background);
+            border-top: 1px solid rgba(128, 128, 128, 0.2);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            z-index: 1000;
+        }
+
+        .nav-btn {
+            color: var(--text) !important;
+            opacity: 0.6;
+            transition: all 0.3s ease;
+        }
+
+        .nav-btn.active {
+            opacity: 1;
+            color: var(--primary-color) !important;
+        }
+
+        .nav-btn i {
+            font-size: 1.5rem;
+        }
+
+        .progress-circle {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: conic-gradient(var(--primary-color) var(--progress), #e0e0e0 0deg);
+        }
+
+        .timer-circle {
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            background: conic-gradient(var(--primary-color) var(--progress), rgba(var(--primary-color-rgb), 0.1) 0deg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        .timer-circle::before {
+            content: '';
+            position: absolute;
+            width: 180px;
+            height: 180px;
+            border-radius: 50%;
+            background: var(--background);
+        }
+
+        .timer-content {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+        }
+
+        .achievement {
+            position: relative;
+            background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+            border-radius: 12px;
+            padding: 1px;
+            margin-bottom: 1rem;
+        }
+
+        .achievement-inner {
+            background: var(--background);
+            border-radius: 11px;
+            padding: 1rem;
+        }
+
+        .achievement-badge {
+            width: 40px;
+            height: 40px;
+            background: var(--primary-color);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+
+        .meal-photo {
+            width: 80px;
+            height: 80px;
+            border-radius: 12px;
+            object-fit: cover;
+        }
+
+        .task-card {
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .card {
+            background: var(--background);
+            border: 1px solid rgba(128, 128, 128, 0.2);
+            border-radius: 16px;
+            backdrop-filter: blur(10px);
+            transition: transform 0.3s ease;
+        }
+
+        .card:hover {
+            transform: scale(1.02);
+        }
+
+        .chat-container {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .chat-message {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .message-content {
+            background: rgba(var(--primary-color-rgb), 0.1);
+            padding: 10px 15px;
+            border-radius: 15px;
+            max-width: 80%;
+        }
+        
+        .quick-questions {
+            margin-top: 20px;
+        }
+
+        .user-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .user-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .user-avatar-placeholder {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body data-theme="light">
+    <div class="container mb-5 pb-5">
+        <!-- GPT Секция -->
+        <div id="gpt-section" class="section">
+            <h2 class="my-4">Спроси у Марвы</h2>
+            <div class="card p-3 mb-3">
+                <div class="chat-container mb-3">
+                    <div class="chat-message">
+                        <div class="message-avatar">
+                            <img src="./assets/images/marva.jpg" alt="Марва" class="rounded-circle" style="width: 40px; height: 40px; object-fit: cover;">
+                        </div>
+                        <div class="message-content">
+                            <p class="mb-0">Привет! Я Марва, ваш персональный ассистент по условному голоданию. Как я могу помочь вам сегодня?</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="input-group">
+                    <input type="text" class="form-control" placeholder="Задайте вопрос Марве...">
+                    <button class="btn btn-primary">
+                        <i class="bi bi-send"></i>
+                    </button>
+                </div>
+            </div>
+            <!-- Быстрые вопросы -->
+            <div class="quick-questions">
+                <h6 class="mb-3">Частые вопросы:</h6>
+                <div class="d-flex flex-wrap gap-2">
+                    <button class="btn btn-outline-primary btn-sm">Как начать голодание?</button>
+                    <button class="btn btn-outline-primary btn-sm">Что можно пить?</button>
+                    <button class="btn btn-outline-primary btn-sm">Сколько часов голодать?</button>
+                    <button class="btn btn-outline-primary btn-sm">Противопоказания</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Лента -->
+        <div id="feed-section" class="section d-none">
+            <h2 class="my-4">Лента курсов</h2>
+            <div class="card p-3 mb-3">
+                <h5>Условное голодание (UG)</h5>
+                <p class="mb-2">Научитесь правильно практиковать интервальное голодание для здоровья и долголетия</p>
+                <div class="d-flex align-items-center mb-3">
+                    <span class="badge bg-primary me-2">16/8</span>
+                    <span class="badge bg-success me-2">20/4</span>
+                    <span class="badge bg-info">OMAD</span>
+                </div>
+                <div class="progress mb-3" style="height: 8px;">
+                    <div class="progress-bar" role="progressbar" style="width: 25%;" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <small class="text-muted">Участников: 342</small>
+                        <br>
+                        <small class="text-muted">Старт: 15 января</small>
+                    </div>
+                    <button class="btn btn-primary" onclick="joinCourse()">Присоединиться</button>
+                </div>
+            </div>
+
+            <!-- Группы курса -->
+            <h4 class="mt-4 mb-3">Активные группы</h4>
+            <div class="card p-3 mb-3">
+                <h6>Группа #1 - Начинающие</h6>
+                <p class="small mb-2">Схема 16/8</p>
+                <div class="d-flex justify-content-between align-items-center">
+                    <small class="text-muted">12/15 участников</small>
+                    <button class="btn btn-outline-primary btn-sm">Вступить</button>
+                </div>
+            </div>
+
+            <div class="card p-3 mb-3">
+                <h6>Группа #2 - Продвинутые</h6>
+                <p class="small mb-2">Схема 20/4</p>
+                <div class="d-flex justify-content-between align-items-center">
+                    <small class="text-muted">8/15 участников</small>
+                    <button class="btn btn-outline-primary btn-sm">Вступить</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Профиль -->
+        <div id="profile-section" class="section d-none">
+            <h2 class="my-4">Профиль</h2>
+            <div class="card p-3 mb-4">
+                <div class="d-flex align-items-center">
+                    <div id="userAvatar" class="user-avatar me-3"></div>
+                    <div>
+                        <h4 id="userFullName">Андрей Мананенко</h4>
+                        <p class="text-muted mb-0">Курс: Условное голодание</p>
+                        <p class="text-muted mb-0">Схема: 16/8</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Статистика -->
+            <div class="card p-3 mb-4">
+                <h5>Моя статистика</h5>
+                <div class="row text-center">
+                    <div class="col">
+                        <h3>7</h3>
+                        <small class="text-muted">Дней подряд</small>
+                    </div>
+                    <div class="col">
+                        <h3>16</h3>
+                        <small class="text-muted">Часов сегодня</small>
+                    </div>
+                    <div class="col">
+                        <h3>89%</h3>
+                        <small class="text-muted">Успешность</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Таймер голодания -->
+            <div class="card p-3 mb-4">
+                <h5 class="text-center mb-3">Таймер голодания</h5>
+                <div class="timer-circle" style="--progress: 65%">
+                    <div class="timer-content">
+                        <h2 class="mb-0">13:45</h2>
+                        <p class="mb-0">осталось</p>
+                    </div>
+                </div>
+                <div class="d-flex justify-content-around mt-3">
+                    <button class="btn btn-outline-primary" onclick="startFasting()">
+                        <i class="bi bi-play-fill"></i> Начать
+                    </button>
+                    <button class="btn btn-outline-danger" onclick="stopFasting()">
+                        <i class="bi bi-stop-fill"></i> Стоп
+                    </button>
+                </div>
+            </div>
+
+            <!-- Достижения -->
+            <h4 class="mb-3">Достижения</h4>
+            <div class="achievement">
+                <div class="achievement-inner">
+                    <div class="d-flex align-items-center">
+                        <div class="achievement-badge me-3">
+                            <i class="bi bi-trophy"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-1">Первая неделя</h6>
+                            <small class="text-muted">7 дней подряд успешного голодания</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Дневник питания -->
+            <h4 class="mb-3">Дневник питания</h4>
+            <div class="card p-3 mb-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="mb-0">Сегодня</h6>
+                    <button class="btn btn-outline-primary btn-sm" onclick="addMeal()">
+                        <i class="bi bi-plus"></i> Добавить
+                    </button>
+                </div>
+                <div class="meal-entry d-flex align-items-center mb-2">
+                    <img src="./assets/images/meal-placeholder.jpg" alt="Прием пищи" class="meal-photo me-3">
+                    <div>
+                        <h6 class="mb-1">Обед</h6>
+                        <small class="text-muted">14:30 • 450 ккал</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ежедневные задания -->
+            <h4 class="mb-3">Задания дня</h4>
+            <div class="card p-3 mb-4">
+                <div class="task-card p-2 mb-2">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-1">Продержаться 16 часов</h6>
+                            <div class="progress" style="height: 4px; width: 100px;">
+                                <div class="progress-bar" role="progressbar" style="width: 75%"></div>
+                            </div>
+                        </div>
+                        <span class="badge bg-primary">+50</span>
+                    </div>
+                </div>
+                <div class="task-card p-2">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-1">Выпить 2л воды</h6>
+                            <div class="progress" style="height: 4px; width: 100px;">
+                                <div class="progress-bar" role="progressbar" style="width: 50%"></div>
+                            </div>
+                        </div>
+                        <span class="badge bg-primary">+30</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Мини-уроки -->
+            <h4 class="mb-3">Мини-уроки</h4>
+            <div class="card p-3 mb-4">
+                <div class="lesson mb-3">
+                    <h6>Основы интервального голодания</h6>
+                    <p class="small mb-2">Узнайте, как работает ваше тело во время голодания</p>
+                    <div class="progress" style="height: 4px;">
+                        <div class="progress-bar" role="progressbar" style="width: 30%"></div>
+                    </div>
+                </div>
+                <div class="lesson">
+                    <h6>Правильное окно питания</h6>
+                    <p class="small mb-2">Как составить график приема пищи</p>
+                    <div class="progress" style="height: 4px;">
+                        <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Дневник прогресса -->
+            <h4>Дневник прогресса</h4>
+            <div class="card p-3">
+                <div class="progress-week">
+                    <div class="d-flex justify-content-between mb-3">
+                        <div class="text-center">
+                            <div class="progress-circle" style="--progress: 100%"></div>
+                            <small>Пн</small>
+                        </div>
+                        <div class="text-center">
+                            <div class="progress-circle" style="--progress: 100%"></div>
+                            <small>Вт</small>
+                        </div>
+                        <div class="text-center">
+                            <div class="progress-circle" style="--progress: 85%"></div>
+                            <small>Ср</small>
+                        </div>
+                        <div class="text-center">
+                            <div class="progress-circle" style="--progress: 100%"></div>
+                            <small>Чт</small>
+                        </div>
+                        <div class="text-center">
+                            <div class="progress-circle" style="--progress: 90%"></div>
+                            <small>Пт</small>
+                        </div>
+                        <div class="text-center">
+                            <div class="progress-circle" style="--progress: 75%"></div>
+                            <small>Сб</small>
+                        </div>
+                        <div class="text-center">
+                            <div class="progress-circle" style="--progress: 0%"></div>
+                            <small>Вс</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Нижняя навигация -->
+    <nav class="nav-bottom py-2">
+        <div class="d-flex justify-content-around">
+            <button class="btn nav-btn active" onclick="showSection('gpt-section')">
+                <i class="bi bi-chat-dots"></i>
+                <div><small>Марва</small></div>
+            </button>
+            <button class="btn nav-btn" onclick="showSection('feed-section')">
+                <i class="bi bi-collection"></i>
+                <div><small>Лента</small></div>
+            </button>
+            <button class="btn nav-btn" onclick="showSection('profile-section')">
+                <i class="bi bi-person"></i>
+                <div><small>Профиль</small></div>
+            </button>
+        </div>
+    </nav>
+
+    <script>
+        // Инициализация Telegram WebApp
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+
+        // Получаем данные пользователя из Telegram
+        const user = tg.initDataUnsafe.user;
+        if (user) {
+            document.getElementById('userFullName').textContent = user.first_name + (user.last_name ? ' ' + user.last_name : '');
+            if (user.photo_url) {
+                const avatar = document.getElementById('userAvatar');
+                avatar.style.background = 'none';
+                avatar.style.padding = '0';
+                avatar.innerHTML = `<img src="${user.photo_url}" alt="${user.first_name}" class="rounded-circle" style="width: 48px; height: 48px; object-fit: cover;">`;
+            } else {
+                document.getElementById('userAvatar').textContent = user.first_name.charAt(0);
+            }
+        }
+
+        // Управление таймером
+        let fastingTime = 0;
+        let fastingInterval;
+        let fastingStartTime;
+        let targetHours = 16; // По умолчанию 16 часов
+
+        // Аналитика
+        const Analytics = {
+            events: {},
+            
+            // Отслеживание событий
+            logEvent: function(eventName, params = {}) {
+                // Сохраняем событие
+                if (!this.events[eventName]) {
+                    this.events[eventName] = [];
+                }
+                
+                const eventData = {
+                    timestamp: new Date().toISOString(),
+                    userId: user?.id,
+                    params: params
+                };
+                
+                this.events[eventName].push(eventData);
+                
+                // Сохраняем в localStorage
+                localStorage.setItem('analytics', JSON.stringify(this.events));
+                
+                // Отправляем в Telegram
+                tg.sendData(JSON.stringify({
+                    event: eventName,
+                    data: eventData
+                }));
+            },
+            
+            // Получение статистики
+            getStats: function() {
+                return this.events;
+            }
+        };
+
+        // Отслеживание действий пользователя
+        function startFasting() {
+            if (fastingInterval) {
+                tg.showAlert('Таймер уже запущен!');
+                return;
+            }
+
+            Analytics.logEvent('fasting_started', {
+                targetHours: targetHours,
+                startTime: new Date().toISOString()
+            });
+
+            fastingStartTime = Date.now();
+            fastingInterval = setInterval(updateTimer, 1000);
+            localStorage.setItem('fastingStartTime', fastingStartTime);
+            updateTimer();
+            
+            tg.showAlert('Таймер голодания запущен!');
+        }
+
+        function stopFasting() {
+            tg.showConfirm('Вы уверены, что хотите прервать голодание?', function(confirmed) {
+                if (confirmed) {
+                    const duration = (Date.now() - fastingStartTime) / (1000 * 60 * 60); // в часах
+                    
+                    Analytics.logEvent('fasting_stopped', {
+                        duration: duration.toFixed(2),
+                        targetHours: targetHours,
+                        completed: duration >= targetHours
+                    });
+
+                    clearInterval(fastingInterval);
+                    fastingInterval = null;
+                    fastingStartTime = null;
+                    localStorage.removeItem('fastingStartTime');
+                    updateTimer();
+                    tg.showAlert('Голодание остановлено');
+                }
+            });
+        }
+
+        function updateTimer() {
+            if (!fastingStartTime) {
+                document.querySelector('.timer-content h2').textContent = '00:00';
+                document.querySelector('.timer-circle').style.setProperty('--progress', '0%');
+                return;
+            }
+
+            const now = Date.now();
+            const elapsed = Math.floor((now - fastingStartTime) / 1000);
+            const remaining = (targetHours * 3600) - elapsed;
+
+            if (remaining <= 0) {
+                clearInterval(fastingInterval);
+                fastingInterval = null;
+                tg.showAlert('Поздравляем! Вы достигли цели голодания!');
+                updateAchievements();
+                return;
+            }
+
+            const hours = Math.floor(remaining / 3600);
+            const minutes = Math.floor((remaining % 3600) / 60);
+            const progress = (elapsed / (targetHours * 3600)) * 100;
+
+            document.querySelector('.timer-content h2').textContent = 
+                `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+            document.querySelector('.timer-circle').style.setProperty('--progress', `${progress}%`);
+        }
+
+        // Управление приемами пищи
+        function addMeal() {
+            tg.showPopup({
+                title: 'Добавить прием пищи',
+                message: 'Выберите тип приема пищи:',
+                buttons: [
+                    {id: 'breakfast', text: 'Завтрак'},
+                    {id: 'lunch', text: 'Обед'},
+                    {id: 'dinner', text: 'Ужин'}
+                ]
+            }, function(buttonId) {
+                if (buttonId) {
+                    Analytics.logEvent('meal_added', {
+                        type: buttonId,
+                        time: new Date().toISOString()
+                    });
+
+                    const meals = JSON.parse(localStorage.getItem('meals') || '[]');
+                    meals.push({
+                        type: buttonId,
+                        time: new Date().toISOString(),
+                        calories: 0
+                    });
+                    localStorage.setItem('meals', JSON.stringify(meals));
+                    updateMealsList();
+                }
+            });
+        }
+
+        function updateMealsList() {
+            const meals = JSON.parse(localStorage.getItem('meals') || '[]');
+            const mealsList = document.querySelector('.meal-entry').parentElement;
+            mealsList.innerHTML = '';
+
+            meals.forEach(meal => {
+                const mealTime = new Date(meal.time);
+                const timeString = mealTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                
+                mealsList.innerHTML += `
+                    <div class="meal-entry d-flex align-items-center mb-2">
+                        <img src="./assets/images/meal-placeholder.jpg" alt="Прием пищи" class="meal-photo me-3">
+                        <div>
+                            <h6 class="mb-1">${meal.type.charAt(0).toUpperCase() + meal.type.slice(1)}</h6>
+                            <small class="text-muted">${timeString} • ${meal.calories} ккал</small>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        // Управление достижениями
+        function updateAchievements() {
+            const achievements = JSON.parse(localStorage.getItem('achievements') || '[]');
+            const fastingDays = parseInt(localStorage.getItem('fastingDays') || '0');
+
+            if (fastingDays >= 7 && !achievements.includes('firstWeek')) {
+                achievements.push('firstWeek');
+                localStorage.setItem('achievements', JSON.stringify(achievements));
+                
+                Analytics.logEvent('achievement_unlocked', {
+                    achievement: 'firstWeek',
+                    daysCount: fastingDays
+                });
+
+                tg.showAlert('Новое достижение: Первая неделя!');
+            }
+        }
+
+        // Статистика использования
+        function getDailyStats() {
+            const stats = {
+                totalFastingHours: 0,
+                completedFasts: 0,
+                averageFastDuration: 0,
+                mealsCount: 0
+            };
+
+            // Анализируем события
+            Object.entries(Analytics.events).forEach(([eventName, events]) => {
+                switch(eventName) {
+                    case 'fasting_stopped':
+                        events.forEach(event => {
+                            stats.totalFastingHours += parseFloat(event.params.duration);
+                            if (event.params.completed) {
+                                stats.completedFasts++;
+                            }
+                        });
+                        break;
+                    case 'meal_added':
+                        stats.mealsCount += events.length;
+                        break;
+                }
+            });
+
+            if (stats.completedFasts > 0) {
+                stats.averageFastDuration = stats.totalFastingHours / stats.completedFasts;
+            }
+
+            return stats;
+        }
+
+        // Инициализация при загрузке
+        window.onload = function() {
+            // Загружаем сохраненную аналитику
+            const savedAnalytics = localStorage.getItem('analytics');
+            if (savedAnalytics) {
+                Analytics.events = JSON.parse(savedAnalytics);
+            }
+
+            Analytics.logEvent('app_opened', {
+                platform: tg.platform,
+                version: '1.0.0'
+            });
+
+            // Восстанавливаем таймер если он был запущен
+            const savedStartTime = localStorage.getItem('fastingStartTime');
+            if (savedStartTime) {
+                fastingStartTime = parseInt(savedStartTime);
+                fastingInterval = setInterval(updateTimer, 1000);
+                updateTimer();
+            }
+
+            // Загружаем приемы пищи
+            updateMealsList();
+
+            // Показываем GPT секцию по умолчанию
+            showSection('gpt-section');
+        }
+
+        function showSection(sectionId) {
+            Analytics.logEvent('section_viewed', {
+                section: sectionId
+            });
+
+            document.querySelectorAll('.section').forEach(section => {
+                section.classList.add('d-none');
+            });
+            document.getElementById(sectionId).classList.remove('d-none');
+            
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector(`[onclick="showSection('${sectionId}')"]`).classList.add('active');
+        }
+
+        function joinCourse() {
+            tg.showAlert('Вы успешно присоединились к курсу!');
+        }
+    </script>
+</body>
+</html> 
